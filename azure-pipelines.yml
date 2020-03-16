@@ -25,6 +25,9 @@ stages:
       displayName: build docker image
     - script: docker run -t --rm amritanshu16/docker-base:ci
       displayName: Test docker image
+    - script: docker tag amritanshu16/docker-base:ci amritanshu16/docker-base:latest
+      displayName: tag as latest
+      condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   - job: linting
     displayName: Linting
     pool:
@@ -34,3 +37,16 @@ stages:
         sudo apt install shellcheck -y
         find . -regex '.*\.sh$' | xargs -L 1 shellcheck
       displayName: lint shellscripts
+- stage: deploy
+  displayName: Deploy image
+  jobs:
+  - job: Deploy_latest
+    displayName: Deploy latest tag
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        docker login -u "${DOCKER_REPOSITORY_USER}" "${DOCKER_REPOSITORY_SECRET}"
+        docker push amritanshu16/docker-base:latest
+      displayName: Publish latest tag
+      condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
