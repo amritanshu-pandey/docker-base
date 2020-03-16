@@ -25,8 +25,16 @@ stages:
       displayName: build docker image
     - script: docker run -t --rm amritanshu16/docker-base:ci
       displayName: Test docker image
-    - script: docker tag amritanshu16/docker-base:ci amritanshu16/docker-base:latest
+    - script: |
+        docker tag amritanshu16/docker-base:ci amritanshu16/docker-base:latest
+        docker image save amritanshu16/docker-base:latest -o docker-image.tar.gz
       displayName: tag as latest
+      condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+        artifactName: 'docker-image.tar.gz' 
+        publishLocation: 'Container' # Options: container, filePath
       condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
   - job: linting
     displayName: Linting
@@ -45,7 +53,13 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current' # Options: current, specific
+        artifactName: 'docker-image.tar.gz'
+      condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
     - script: |
+        docker image load docker-image.tar.gz
         docker login -u "${DOCKER_REPOSITORY_USER}" "${DOCKER_REPOSITORY_SECRET}"
         docker push amritanshu16/docker-base:latest
       displayName: Publish latest tag
