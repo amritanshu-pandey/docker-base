@@ -113,13 +113,13 @@ stages:
         docker images
       displayName: Load docker image prepared in last step into docker daemon
     - script: |
-        docker login -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
+        docker login docker.pkg.github.com -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
         docker tag amritanshu16/docker-base:ci $(GITHUB_DOCKER_REPOSITORY)/docker-base:latest
         docker push $(GITHUB_DOCKER_REPOSITORY)/docker-base:latest
       displayName: Publish latest tag
       condition: eq(variables['build.sourceBranch'], 'refs/heads/master')
     - script: |
-        docker login -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
+        docker login docker.pkg.github.com -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
         docker tag amritanshu16/docker-base:ci $(GITHUB_DOCKER_REPOSITORY)/docker-base:$(build.sourceBranchName)
         docker push $(GITHUB_DOCKER_REPOSITORY)/docker-base:$(build.sourceBranchName)
       displayName: Publish git tag
