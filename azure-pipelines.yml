@@ -11,8 +11,8 @@ trigger:
       - '*'
 
 schedules:
-- cron: "*/10 * * * *"
-  displayName: build every 10 minutes
+- cron: "0 0 * * *"
+  displayName: build master branch every midnight (docker tag `latest`)
   branches:
     include:
     - master
@@ -31,6 +31,7 @@ stages:
   jobs:  
   - job: Build
     displayName: Build
+    dependsOn: []
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -52,6 +53,7 @@ stages:
 
   - job: linting
     displayName: Linting
+    dependsOn: []
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -64,6 +66,7 @@ stages:
   displayName: Deploy image
   jobs:
   - job: deploy_to_docker_hub
+    dependsOn: []
     displayName: Deploy image to dockerhub
     pool:
       vmImage: 'ubuntu-latest'
@@ -89,5 +92,35 @@ stages:
         docker login -u $(DOCKER_REPOSITORY_USER) -p $(DOCKER_REPOSITORY_SECRET)
         docker tag amritanshu16/docker-base:{ci,$(build.sourceBranchName)}
         docker push amritanshu16/docker-base:$(build.sourceBranchName)
+      displayName: Publish git tag
+      condition: startsWith(variables['build.sourceBranch'], 'refs/tags')
+
+  - job: deploy_to_github_packages
+    dependsOn: []
+    displayName: Deploy image to github packages
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        artifactName: 'drop'
+        downloadPath: ./
+      displayName: download artefacts from previous stage
+    - script: |
+        docker images
+        docker load < drop/docker-image.tar.gz
+        docker images
+      displayName: Load docker image prepared in last step into docker daemon
+    - script: |
+        cat ~/GH_TOKEN.txt | docker login -u amritanshu-pandey --password-stdin
+        docker tag amritanshu16/docker-base:ci docker.pkg.github.com/amritanshu-pandey/docker-base:latest
+        docker push docker.pkg.github.com/amritanshu-pandey/docker-base:latest
+      displayName: Publish latest tag
+      condition: eq(variables['build.sourceBranch'], 'refs/heads/master')
+    - script: |
+        cat ~/GH_TOKEN.txt | docker login -u amritanshu-pandey --password-stdin
+        docker tag amritanshu16/docker-base:ci docker.pkg.github.com/amritanshu-pandey/docker-base:$(build.sourceBranchName)
+        docker push docker.pkg.github.com/amritanshu-pandey/docker-base:$(build.sourceBranchName)
       displayName: Publish git tag
       condition: startsWith(variables['build.sourceBranch'], 'refs/tags')
