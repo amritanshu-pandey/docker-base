@@ -113,14 +113,14 @@ stages:
         docker images
       displayName: Load docker image prepared in last step into docker daemon
     - script: |
-        cat ~/GH_TOKEN.txt | docker login -u amritanshu-pandey --password-stdin
-        docker tag amritanshu16/docker-base:ci docker.pkg.github.com/amritanshu-pandey/docker-base:latest
-        docker push docker.pkg.github.com/amritanshu-pandey/docker-base:latest
+        docker login -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
+        docker tag amritanshu16/docker-base:ci $(GITHUB_DOCKER_REPOSITORY)/docker-base:latest
+        docker push $(GITHUB_DOCKER_REPOSITORY)/docker-base:latest
       displayName: Publish latest tag
       condition: eq(variables['build.sourceBranch'], 'refs/heads/master')
     - script: |
-        cat ~/GH_TOKEN.txt | docker login -u amritanshu-pandey --password-stdin
-        docker tag amritanshu16/docker-base:ci docker.pkg.github.com/amritanshu-pandey/docker-base:$(build.sourceBranchName)
-        docker push docker.pkg.github.com/amritanshu-pandey/docker-base:$(build.sourceBranchName)
+        docker login -u $(GITHUB_PACKAGES_USER) -p $(GITHUB_PACKAGES_SECRET)
+        docker tag amritanshu16/docker-base:ci $(GITHUB_DOCKER_REPOSITORY)/docker-base:$(build.sourceBranchName)
+        docker push $(GITHUB_DOCKER_REPOSITORY)/docker-base:$(build.sourceBranchName)
       displayName: Publish git tag
       condition: startsWith(variables['build.sourceBranch'], 'refs/tags')
