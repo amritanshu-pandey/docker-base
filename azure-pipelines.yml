@@ -22,7 +22,9 @@ resources:
 - repo: self
 
 variables:
-  tag: '$(Build.BuildId)'
+  - name: tag
+    value: '$(Build.BuildId)'
+  - group: integrations
 
 stages:
 - stage: Build
