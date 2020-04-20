@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux
+set -eu
 
 for init_script in $(find /etc/initialise.sh.d -type f | sort); do
     echo "Executing init script: ${init_script}"
